@@ -14,7 +14,9 @@
 [![Indexed Synthetic Incidents](https://img.shields.io/badge/Indexed-64%20Synthetic%20Incidents-8B5CF6?style=flat&labelColor=24292e)](#-empirical-evaluation--benchmarks)
 [![License: MIT](https://img.shields.io/badge/License-MIT-EAB308?style=flat&labelColor=24292e)](#-license--acknowledgments)
 
-> 📹 **Video Demo**: [Watch the 30-Second Walkthrough Video](https://github.com/dusk4186-cloud/TriageIQ/raw/main/assets/TriageIQ_demo.mp4)
+> 📹 **Video Demo**: [Watch the 30-Second Walkthrough Video]
+
+https://github.com/user-attachments/assets/8ebdfea1-009b-40df-8dab-fa28bc415175
 
 A Model Context Protocol (MCP) server that connects an LLM to Jira Cloud and a ChromaDB index of past (synthetic) defects. It offers 9 tools: 7 for Jira tickets and 2 for finding similar past defects and suggesting likely root causes.
 
