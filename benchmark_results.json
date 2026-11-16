@@ -1,0 +1,205 @@
+{
+  "total_documents_indexed": 64,
+  "recall_at_1": 93.33333333333333,
+  "recall_at_3": 93.33333333333333,
+  "recall_at_5": 100.0,
+  "top3_count": "14 of 15",
+  "mrr": 0.95,
+  "results": [
+    {
+      "num": 1,
+      "target": "SCRUM-6",
+      "title": "Inventory oversell during flash sale",
+      "query": "We have negative stock numbers on our top-selling items after the holiday promo. Multiple buyers bought the zero-inventory items concurrently.",
+      "rank": 4,
+      "similarity": 0.7306,
+      "top3_retrieved": [
+        "SCRUM-47",
+        "SCRUM-19",
+        "SCRUM-49"
+      ]
+    },
+    {
+      "num": 2,
+      "target": "SCRUM-7",
+      "title": "Payment webhook silently failing",
+      "query": "Stripe shows payments as succeeded, but orders are stuck in pending state and not moving to processing due to webhook verification warnings.",
+      "rank": 1,
+      "similarity": 0.9057,
+      "top3_retrieved": [
+        "SCRUM-7",
+        "SCRUM-48",
+        "SCRUM-26"
+      ]
+    },
+    {
+      "num": 3,
+      "target": "SCRUM-8",
+      "title": "Tax calculation API timeout",
+      "query": "Checkout hangs and eventually fails for customers when computing state sales tax. Looking like a 15-second socket timeout on the tax partner endpoint.",
+      "rank": 1,
+      "similarity": 0.8976,
+      "top3_retrieved": [
+        "SCRUM-8",
+        "SCRUM-38",
+        "SCRUM-36"
+      ]
+    },
+    {
+      "num": 4,
+      "target": "SCRUM-9",
+      "title": "Loyalty points not deducting on purchase",
+      "query": "Buyers are redeeming reward points at checkout, but their rewards balance is not getting debited after the order is placed.",
+      "rank": 1,
+      "similarity": 0.7897,
+      "top3_retrieved": [
+        "SCRUM-9",
+        "SCRUM-42",
+        "SCRUM-30"
+      ]
+    },
+    {
+      "num": 5,
+      "target": "SCRUM-12",
+      "title": "Database deadlock on order fulfillment",
+      "query": "Warehouse workers cannot update order status to shipped. Postgres logs show deadlock detected and ShareLock conflicts between processes.",
+      "rank": 1,
+      "similarity": 0.8929,
+      "top3_retrieved": [
+        "SCRUM-12",
+        "SCRUM-51",
+        "SCRUM-6"
+      ]
+    },
+    {
+      "num": 6,
+      "target": "SCRUM-13",
+      "title": "Incorrect currency conversion at checkout",
+      "query": "European shoppers are being undercharged. The EUR/USD FX rate looks stale in our Redis cache because rates haven't refreshed in 48 hours.",
+      "rank": 1,
+      "similarity": 0.8484,
+      "top3_retrieved": [
+        "SCRUM-13",
+        "SCRUM-32",
+        "SCRUM-25"
+      ]
+    },
+    {
+      "num": 7,
+      "target": "SCRUM-14",
+      "title": "PDF invoice generation memory leak",
+      "query": "Node.js application worker OOM crashing every few hours under heavy traffic. Heap allocation keeps growing when rendering invoice PDFs with Puppeteer.",
+      "rank": 1,
+      "similarity": 0.8825,
+      "top3_retrieved": [
+        "SCRUM-14",
+        "SCRUM-41",
+        "SCRUM-31"
+      ]
+    },
+    {
+      "num": 8,
+      "target": "SCRUM-16",
+      "title": "Session hijacking via predictable JWT tokens",
+      "query": "Pen-test report warns that authorization tokens use weak signing and can be spoofed, resulting in concurrent logins from different IP addresses on a single session.",
+      "rank": 1,
+      "similarity": 0.766,
+      "top3_retrieved": [
+        "SCRUM-16",
+        "SCRUM-45",
+        "SCRUM-53"
+      ]
+    },
+    {
+      "num": 9,
+      "target": "SCRUM-18",
+      "title": "Apple Pay token decryption failure",
+      "query": "iPhone users cannot finish purchase via Apple Pay. The payment token decryption crashes with invalid PKCS7 padding error on the certificate.",
+      "rank": 1,
+      "similarity": 0.8737,
+      "top3_retrieved": [
+        "SCRUM-18",
+        "SCRUM-61",
+        "SCRUM-24"
+      ]
+    },
+    {
+      "num": 10,
+      "target": "SCRUM-19",
+      "title": "Promo code stacking logic error",
+      "query": "Shoppers are combining multiple discount coupons that should not be stackable, causing cart balances to drop below zero.",
+      "rank": 1,
+      "similarity": 0.8008,
+      "top3_retrieved": [
+        "SCRUM-19",
+        "SCRUM-31",
+        "SCRUM-42"
+      ]
+    },
+    {
+      "num": 11,
+      "target": "SCRUM-20",
+      "title": "ElasticSearch catalog out of sync",
+      "query": "Disabled and out-of-catalog items are still visible in store search results because bulk reindexing failed on a price field float parsing error.",
+      "rank": 1,
+      "similarity": 0.835,
+      "top3_retrieved": [
+        "SCRUM-20",
+        "SCRUM-57",
+        "SCRUM-6"
+      ]
+    },
+    {
+      "num": 12,
+      "target": "SCRUM-23",
+      "title": "Duplicate refund processing",
+      "query": "Support agents double-clicking the refund button in the CRM issues two payout transactions to the customer for the same charge.",
+      "rank": 1,
+      "similarity": 0.8503,
+      "top3_retrieved": [
+        "SCRUM-23",
+        "SCRUM-48",
+        "SCRUM-42"
+      ]
+    },
+    {
+      "num": 13,
+      "target": "SCRUM-25",
+      "title": "Redis cache stampede on homepage products",
+      "query": "Relational DB hits 100% utilization at the top of every hour because all featured products cache keys expire at the exact same second.",
+      "rank": 1,
+      "similarity": 0.7886,
+      "top3_retrieved": [
+        "SCRUM-25",
+        "SCRUM-20",
+        "SCRUM-6"
+      ]
+    },
+    {
+      "num": 14,
+      "target": "SCRUM-30",
+      "title": "Gift card double spend race condition",
+      "query": "A buyer redeemed the same voucher balance twice across two simultaneous checkout tabs without deducting balance between them.",
+      "rank": 1,
+      "similarity": 0.8108,
+      "top3_retrieved": [
+        "SCRUM-30",
+        "SCRUM-42",
+        "SCRUM-19"
+      ]
+    },
+    {
+      "num": 15,
+      "target": "SCRUM-48",
+      "title": "Refunds to expired cards fail silently",
+      "query": "When refunding an order to a credit card that passed its expiration date, Stripe returns expired_card decline, and the refund gets stuck in limbo without notifying support.",
+      "rank": 1,
+      "similarity": 0.8727,
+      "top3_retrieved": [
+        "SCRUM-48",
+        "SCRUM-26",
+        "SCRUM-7"
+      ]
+    }
+  ]
+}

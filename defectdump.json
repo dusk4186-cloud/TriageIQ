@@ -1,0 +1,603 @@
+[
+  {
+    "summary": "Inventory oversell during flash sale",
+    "description": "Multiple customers successfully purchased the same SKU despite stock reaching zero, resulting in unfulfillable orders.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: ERROR [InventoryService] - OptimisticLockException on SKU_9932: version mismatch",
+      "root_cause: Database transaction isolation level set to READ COMMITTED instead of SERIALIZABLE during high-concurrency checkout flow."
+    ]
+  },
+  {
+    "summary": "Payment webhook silently failing",
+    "description": "Orders remain in 'Pending Payment' status even though customers' cards were successfully charged by Stripe.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: WARN [StripeWebhookController] - Signature verification failed for payload id evt_3L9x...",
+      "root_cause: The webhook endpoint secret was rotated in the payment gateway but not updated in the production middleware environment variables."
+    ]
+  },
+  {
+    "summary": "Tax calculation API timeout",
+    "description": "Checkout process stalls for 15 seconds before failing with a generic error when calculating state taxes.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [TaxClient] - SocketTimeoutException: Read timed out after 15000ms calling https://api.taxprovider.com/v2/calc",
+      "root_cause: External tax provider experienced an outage, and the middleware lacked a circuit breaker or fallback static tax rate mechanism."
+    ]
+  },
+  {
+    "summary": "Loyalty points not deducting on purchase",
+    "description": "Customers can apply loyalty points to their order total, but the points are not subtracted from their account balance post-purchase.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: INFO [OrderProcessor] - Emitting Kafka event OrderCreated. WARN [LoyaltyConsumer] - Message deserialization failed",
+      "root_cause: Schema registry mismatch in the Kafka message payload; the Loyalty service failed to parse the 'points_applied' field due to a type change from int to float."
+    ]
+  },
+  {
+    "summary": "Fraud detection false positives on international orders",
+    "description": "Legitimate cross-border transactions are automatically declined and flagged as fraudulent.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: INFO [FraudEngine] - Transaction blocked. Risk Score: 95. Reason: IP mismatch with billing country",
+      "root_cause: The fraud rules engine was updated to heavily penalize VPN usage, but it incorrectly categorized standard European ISP routing as proxy networks."
+    ]
+  },
+  {
+    "summary": "Cart abandonment emails sent to converted users",
+    "description": "Users who successfully completed their purchase are receiving automated 'You left something behind' emails.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: DEBUG [Cron-CartAbandon] - Processing cart id C_8834. Status: ACTIVE",
+      "root_cause: The checkout completion microservice failed to update the cart state from 'ACTIVE' to 'CONVERTED' in the Redis cache due to an asynchronous race condition."
+    ]
+  },
+  {
+    "summary": "Database deadlock on order fulfillment",
+    "description": "Backend warehouse staff are unable to mark orders as 'Shipped' due to system lockups.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: FATAL [DBPool] - ERROR: deadlock detected. Detail: Process 1421 waits for ShareLock on transaction 3892; blocked by process 1422.",
+      "root_cause: Bidirectional locking between the 'Order_Lines' and 'Inventory_Ledger' tables caused by batch-update jobs running concurrently with manual warehouse updates."
+    ]
+  },
+  {
+    "summary": "Incorrect currency conversion at checkout",
+    "description": "Prices converted from USD to EUR are consistently 10% lower than the actual exchange rate.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: INFO [CurrencyService] - Fetching exchange rates from Redis cache. Age: 172800s",
+      "root_cause: The daily CRON job responsible for fetching updated forex rates from the European Central Bank API has been failing silently for 48 hours."
+    ]
+  },
+  {
+    "summary": "PDF invoice generation memory leak",
+    "description": "The application server crashes out of memory approximately every 4 hours during peak traffic.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: FATAL [NodeProcess] - JavaScript heap out of memory. Allocation failed - process out of memory",
+      "root_cause: The PDF generation library (Puppeteer) is spawning headless Chrome instances for each receipt but failing to close the browser contexts after the stream ends."
+    ]
+  },
+  {
+    "summary": "Missing shipping methods for PO Boxes",
+    "description": "Customers entering PO Box addresses are presented with 'No shipping methods available'.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: WARN [ShippingRouter] - Discarding method FedEx_Ground: restricted address type PO_BOX",
+      "root_cause: USPS was accidentally removed from the active courier list in the admin panel, leaving no valid fallback for restricted address types."
+    ]
+  },
+  {
+    "summary": "Session hijacking via predictable JWT tokens",
+    "description": "Security audit revealed that user sessions can be hijacked by guessing the session token.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: WARN [AuthFilter] - Multiple concurrent IPs detected for session u_773",
+      "root_cause: The JWT signing algorithm was accidentally downgraded to HS256 with a weak, hardcoded secret ('test_secret_123') left over from a staging deployment."
+    ]
+  },
+  {
+    "summary": "Product variations not updating price",
+    "description": "Selecting a premium color/size variant on the product page does not update the displayed price.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: ERROR [Frontend] - Uncaught TypeError: Cannot read properties of undefined (reading 'price_modifier')",
+      "root_cause: The GraphQL query fetching product details did not request the 'price_modifier' field for nested variant objects."
+    ]
+  },
+  {
+    "summary": "Apple Pay token decryption failure",
+    "description": "Transactions initiated via Apple Pay on iOS devices fail at the final authorization step.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [ApplePayHandler] - Failed to decrypt payment token: Invalid PKCS7 padding",
+      "root_cause: The merchant identity certificate used to decrypt the Apple Pay payload expired and was not renewed in the AWS Key Management Service."
+    ]
+  },
+  {
+    "summary": "Promo code stacking logic error",
+    "description": "Customers are able to apply multiple mutually exclusive promo codes, resulting in negative order totals.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: INFO [Checkout] - Order total calculated as -12.50. Adjusting to 0.00.",
+      "root_cause: The promotional rules engine evaluated discounts iteratively rather than checking the 'exclusive' boolean flag on the coupon entities."
+    ]
+  },
+  {
+    "summary": "ElasticSearch catalog out of sync",
+    "description": "Products marked as 'Inactive' in the backend are still appearing in search results and can be added to the cart.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [ESIndexer] - Bulk indexing failed: MapperParsingException [failed to parse field [price] of type [float]]",
+      "root_cause: A recent data migration introduced string characters into a float field, causing the entire ElasticSearch indexing queue to halt."
+    ]
+  },
+  {
+    "summary": "Guest checkout email collision",
+    "description": "Guest users attempting to checkout with an email already associated with a registered account are stuck in an infinite redirect loop.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: DEBUG [AuthRouter] - User exists. Redirecting to /login. Next: /checkout/guest",
+      "root_cause: The authentication middleware forces a login redirect for known emails, but the guest checkout controller intercepts the redirect, causing a loop."
+    ]
+  },
+  {
+    "summary": "Rate limit exceeded on shipping provider API",
+    "description": "All checkouts are failing with 'Shipping unavailable' during the first 10 minutes of a marketing campaign.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [ShippoClient] - HTTP 429 Too Many Requests. Retry-After: 60s",
+      "root_cause: The backend aggressively queries the shipping API on every keystroke in the zip code field instead of debouncing the requests."
+    ]
+  },
+  {
+    "summary": "Duplicate refund processing",
+    "description": "Customer support agents clicking the 'Refund' button multiple times trigger multiple identical refunds.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: WARN [PaymentService] - Issuing refund of $45.00 against ch_12345 (Attempt 2)",
+      "root_cause: The admin dashboard lacks a disabled state on the refund button during API processing, and the backend lacks an idempotency key for refund requests."
+    ]
+  },
+  {
+    "summary": "Mobile app malformed JSON payload",
+    "description": "The iOS app is unable to complete checkout; server returns a 400 Bad Request.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [ApiGateway] - JSON parse error: Cannot deserialize value of type `java.util.UUID` from String \"\"",
+      "root_cause: The latest iOS app release sends an empty string instead of a null value for the optional 'gift_card_id' field."
+    ]
+  },
+  {
+    "summary": "Redis cache stampede on homepage products",
+    "description": "Database CPU spikes to 100% every hour on the hour, causing site-wide latency.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: WARN [CacheManager] - Cache miss for key: homepage_featured_products",
+      "root_cause: All featured product cache keys have the exact same TTL (3600s) without jitter, causing them to expire simultaneously and triggering a thundering herd on the database."
+    ]
+  },
+  
+  {
+    "summary": "Subscription renewal payment failure",
+    "description": "Monthly subscription renewals are failing for a subset of users, leading to unintended service cancellations.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [SubscriptionWorker] - Charge failed for sub_8832: HTTP 400 'customer_not_found'",
+      "root_cause: A recent database cleanup script accidentally purged legacy customer payment tokens from the Stripe mapping table."
+    ]
+  },
+  {
+    "summary": "Wishlist addition limit throws 500 error",
+    "description": "Users attempting to add more than 50 items to their wishlist encounter a generic server error instead of a friendly warning.",
+    "project_key": "FS",
+    "priority": "Low",
+    "labels": [
+      "logs: ERROR [WishlistController] - DataIntegrityViolationException: value too long for type character varying(255)",
+      "root_cause: The wishlist item array is serialized as a string in the database column, which exceeds its varchar limit when containing more than 50 product UUIDs."
+    ]
+  },
+  {
+    "summary": "Address validation blocking valid rural addresses",
+    "description": "Customers in specific rural postal codes are unable to bypass the 'Invalid Address' error during checkout.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: WARN [AddressValidator] - SmartyStreets API returned 'no_match' for address_id 99231",
+      "root_cause: The address validation middleware is set to 'strict' mode, which rejects addresses lacking standard street numbers, ignoring the 'override' flag passed by the frontend."
+    ]
+  },
+  {
+    "summary": "Product review submission timeout",
+    "description": "Customers submitting long product reviews with images experience a timeout, and the review is lost.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: ERROR [Nginx] - 504 Gateway Time-out while reading response header from upstream",
+      "root_cause: The third-party profanity and image moderation API takes longer than the 30-second Nginx proxy timeout limit to process image payloads."
+    ]
+  },
+  {
+    "summary": "Gift card double spend race condition",
+    "description": "A user successfully applied a $50 gift card to two separate orders by opening two browser tabs and checking out simultaneously.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: INFO [LedgerService] - Deducting $50 from GC_1029. Current balance: $50. (TxId: 991, TxId: 992)",
+      "root_cause: The gift card redemption logic uses a non-atomic read-modify-write operation without optimistic locking, allowing concurrent transactions to read the same initial balance."
+    ]
+  },
+  {
+    "summary": "B2B bulk order cart crash",
+    "description": "Wholesale customers adding quantities greater than 1,000 of a single SKU cause the shopping cart service to crash.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: FATAL [CartService] - StackOverflowError in calculateTieredPricing() recursive loop",
+      "root_cause: The pricing engine uses a poorly optimized recursive function to calculate volume discounts, exceeding the JVM stack size limit on massive quantities."
+    ]
+  },
+  {
+    "summary": "Multi-currency order value mismatch in BI tools",
+    "description": "The analytics dashboard reports heavily inflated revenue metrics due to mixed currency aggregation.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: WARN [ETL-Pipeline] - Ignored field 'currency_code' during BigQuery ingest for table 'sales_daily'",
+      "root_cause: The Kafka connector sinking order events to the data warehouse maps the 'total_price' field as a float but drops the 'currency' metadata, treating JPY as USD."
+    ]
+  },
+  {
+    "summary": "SSO login failure for returning customers",
+    "description": "Users who originally signed up with email/password cannot log in using Google SSO, even if the email matches.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [OAuthHandler] - AccountConflictException: identity provider mismatch for user@example.com",
+      "root_cause: The identity management service lacks account linking functionality; it throws a hard error instead of prompting the user to link their Google account to their existing profile."
+    ]
+  },
+  {
+    "summary": "Free shipping threshold miscalculated with tax",
+    "description": "Customers receive free shipping when their post-tax total exceeds $100, instead of the required pre-tax subtotal.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: DEBUG [PromotionEngine] - Evaluating FreeShippingRule. Target: order.total_amount",
+      "root_cause: The shipping promotion rule evaluates against the 'grand_total' object field rather than the 'subtotal' field in the cart payload."
+    ]
+  },
+  {
+    "summary": "Digital download links return 403 Forbidden",
+    "description": "Customers purchasing digital software keys are unable to download the installer via the provided email link.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: ERROR [S3Presigner] - AccessDenied: The AWS Access Key Id you provided does not exist in our records.",
+      "root_cause: The IAM role attached to the service generating S3 pre-signed URLs was accidentally deleted during a Terraform state refresh."
+    ]
+  },
+  {
+    "summary": "Incorrect B2B tax exemption status",
+    "description": "Verified wholesale accounts are being charged sales tax despite having valid tax exemption certificates on file.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: INFO [TaxProvider] - Customer cert_status=EXPIRED for entity B2B_9918",
+      "root_cause: The daily cron job syncing approved tax exemption certificates from the ERP to the e-commerce backend failed silently, defaulting all users to taxable."
+    ]
+  },
+  {
+    "summary": "Cross-Site Scripting (XSS) in product search",
+    "description": "Security scan identified a reflected XSS vulnerability when typing HTML payloads into the search bar.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: WARN [WAF] - Blocked request containing potential XSS payload in query parameter 'q'",
+      "root_cause: The frontend React application uses 'dangerouslySetInnerHTML' to highlight search term matches without properly sanitizing the user input."
+    ]
+  },
+  {
+    "summary": "Return label generation timeout",
+    "description": "Customers initiating a return in the portal are stuck on a loading screen indefinitely.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: ERROR [EasyPostClient] - ReadTimeout exception fetching label for RMA_00329",
+      "root_cause: The carrier (UPS) API is experiencing degraded performance, and the frontend lacks a timeout/fallback UI to email the label asynchronously."
+    ]
+  },
+  {
+    "summary": "Out of stock notification spam",
+    "description": "Users who opted into 'Notify me when available' emails received 50 identical emails in one minute.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: INFO [Notifier] - Triggering restock alert for SKU_881. Recipients: 1200",
+      "root_cause: A warehouse receiving clerk rapidly scanned the same barcode 50 times to update inventory, triggering the restock event listener on every individual increment."
+    ]
+  },
+  {
+    "summary": "Invoice PDF formatting broken for long addresses",
+    "description": "The layout of printable PDF receipts breaks across multiple pages when the customer has a lengthy address or company name.",
+    "project_key": "FS",
+    "priority": "Low",
+    "labels": [
+      "logs: WARN [PDFGenerator] - Overset text in bounding box 'BillingAddress'",
+      "root_cause: The wkhtmltopdf HTML template uses fixed-height CSS containers instead of flexbox or auto-height, causing text overflow to push table elements out of alignment."
+    ]
+  },
+  {
+    "summary": "Infinite scrolling memory leak",
+    "description": "Mobile web users experience browser crashes after scrolling through multiple pages of the 'All Products' category.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: ERROR [ClientTelemetry] - Event: Browser Crash, Reason: OOM, Page: /category/all",
+      "root_cause: The frontend infinite scroll component appends DOM nodes indefinitely without using a virtualized list to unmount off-screen product cards."
+    ]
+  },
+  {
+    "summary": "Customer wallet balance applied incorrectly",
+    "description": "Store credit is applied to the order but not deducted from the cart total if a discount code is also active.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: INFO [CheckoutPipeline] - Discount active. Bypassing wallet decrement step for cart_919",
+      "root_cause: The checkout pipeline middleware has a mutually exclusive conditional block that skips store credit deduction logic if a promotional coupon code is detected."
+    ]
+  },
+  {
+    "summary": "Guest order tracking link unauthorized",
+    "description": "Guest users clicking 'Track Order' from their email are prompted to log in, but they don't have an account.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: WARN [AuthGuard] - Unauthorized access attempt to /order/status/ORD_1092. Missing Bearer token.",
+      "root_cause: The order tracking endpoint was mistakenly moved under the authenticated API route group during a recent routing refactor."
+    ]
+  },
+  {
+    "summary": "Delivery estimate displays past dates",
+    "description": "During weekends, the estimated delivery date on the product page occasionally shows a date in the past.",
+    "project_key": "FS",
+    "priority": "Low",
+    "labels": [
+      "logs: DEBUG [ShippingCalculator] - ETA calculated as Friday, offset -1 days from current.",
+      "root_cause: The delivery calculation algorithm hardcodes a 3-day transit time but incorrectly subtracts days when the transit window overlaps with Sunday."
+    ]
+  },
+  {
+    "summary": "Session token invalidated on unrelated device logout",
+    "description": "Logging out of the mobile app simultaneously logs the user out of their active desktop web session.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: INFO [SessionManager] - Revoking all tokens for user u_1992",
+      "root_cause: The logout API endpoint deletes the entire user session record in Redis instead of just deleting the specific device's JWT family."
+    ]
+  },
+  {
+    "summary": "Split payment capture failure",
+    "description": "Orders paid partially with a gift card and partially with a credit card fail during the final capture phase, leaving funds authorized but not settled.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: ERROR [PaymentOrchestrator] - Transaction aborted: Partial capture mismatch. Expected $120.00, Captured $70.00 from GC_441.",
+      "root_cause: The payment middleware attempts to capture the credit card authorization before verifying the gift card balance lock, resulting in a rollback when the gift card API times out."
+    ]
+  },
+  {
+    "summary": "Bundle product inventory desync",
+    "description": "Customers can purchase promotional bundles even when one of the underlying component products is entirely out of stock.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: WARN [InventoryService] - Oversell detected on BNDL_HOLIDAY: Component SKU_99X stock is 0, but bundle stock shows 50.",
+      "root_cause: Bundle inventory is cached as a static integer upon creation rather than dynamically calculating available quantity based on the minimum stock level of its child SKUs."
+    ]
+  },
+  {
+    "summary": "Refunds to expired cards fail silently",
+    "description": "Customer service agents process refunds, but the funds are never returned to customers whose original payment method has since expired.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: ERROR [StripeGateway] - Refund failed for ch_9921: card_declined. Extended code: expired_card",
+      "root_cause: The backend does not catch the 'expired_card' exception from the payment gateway to trigger a fallback manual payout workflow, leaving the refund state stuck in 'Processing'."
+    ]
+  },
+  {
+    "summary": "Zero-value orders bypassing fraud check",
+    "description": "Orders totaling $0.00 (via 100% discount codes) bypass the fraud engine and are automatically fulfilled.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: INFO [OrderPipeline] - Order total is 0.00. Skipping Riskified fraud evaluation.",
+      "root_cause: The legacy checkout logic has a hardcoded optimization to skip fraud checks for free orders, which is now being exploited using leaked promotional codes."
+    ]
+  },
+  {
+    "summary": "Guest to registered cart merge drops items",
+    "description": "When a guest user with items in their cart registers for a new account during checkout, their cart is suddenly emptied.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: DEBUG [CartMerger] - Overwriting anonymous cart session anonymous_881 with new user cart u_9912 (empty).",
+      "root_cause: The authentication controller instantiates a fresh cart for newly registered users and performs a destructive overwrite instead of merging the existing anonymous cart session."
+    ]
+  },
+  {
+    "summary": "Tracking number webhook database lock",
+    "description": "High volumes of shipping updates from the 3PL provider cause database timeouts for customers trying to view their order history.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: FATAL [HikariCP] - Connection is not available, request timed out after 30000ms. Pool stats: active=100, idle=0.",
+      "root_cause: The 3PL webhook handler opens a database transaction but makes a synchronous external API call to an SMS provider before committing, exhausting the database connection pool."
+    ]
+  },
+  {
+    "summary": "Coupon applied to excluded categories",
+    "description": "Discount codes specifically configured to exclude 'Clearance' items are successfully discounting clearance merchandise.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: INFO [PromoEngine] - Applying 20% discount to cart_772. Exclusions: [CAT_CLEARANCE]. Match found: false.",
+      "root_cause: The category hierarchy was restructured, and clearance items are now nested under parent categories. The promotion engine only checks immediate parent categories for exclusions."
+    ]
+  },
+  {
+    "summary": "3D Secure authentication drop-off",
+    "description": "Orders remain in a 'Pending Auth' state indefinitely if the user closes the browser tab during the bank's 3D Secure OTP verification.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: WARN [ThreeDSecureCallback] - Orphaned transaction tx_8812. No callback received from issuing bank within 15 minutes.",
+      "root_cause: The system lacks a reconciliation cron job to query the payment gateway for abandoned 3DS challenges, failing to transition the order to 'Failed' and release reserved inventory."
+    ]
+  },
+  {
+    "summary": "Pagination broken on order history",
+    "description": "Customers with more than 10 past orders see the exact same 10 orders on page 2 of their account history.",
+    "project_key": "FS",
+    "priority": "Low",
+    "labels": [
+      "logs: DEBUG [OrderController] - Executing query: SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 10 OFFSET 0",
+      "root_cause: The frontend passes the 'page' query parameter as a string, which the backend integer parser fails to cast correctly, causing the offset to silently default to 0."
+    ]
+  },
+  {
+    "summary": "Abandoned cart emails show internal SKUs",
+    "description": "Customers are receiving marketing emails that say 'You left SKU_109283_BLK behind!' instead of the actual product name.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: WARN [KlaviyoSync] - Missing localized_name for product entity. Defaulting to sku_id.",
+      "root_cause: The daily product catalog sync to the email marketing platform fails to map the 'title' field from the newly implemented GraphQL PIM (Product Information Management) schema."
+    ]
+  },
+  {
+    "summary": "Valid TLDs rejected in email field",
+    "description": "Users with newer email domain extensions (like .shop, .online, .tech) are blocked from creating accounts.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: WARN [RegistrationValidator] - Rejected email format: user@mystore.online",
+      "root_cause: The frontend regex used for email validation is severely outdated and restricts the top-level domain (TLD) to a hardcoded list of legacy 2-4 character extensions."
+    ]
+  },
+  {
+    "summary": "Buy Again button adds discontinued items",
+    "description": "Clicking 'Buy Again' from order history adds inactive products to the cart, leading to a crash at checkout.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [CheckoutValidation] - NullPointerException: Cannot invoke getPrice() on null product reference prod_xx1.",
+      "root_cause: The 'Buy Again' feature clones the historical order line item directly into the active cart without validating current catalog availability or active status flags."
+    ]
+  },
+  {
+    "summary": "Session timeout clears cart but retains UI state",
+    "description": "Users who leave the site open for hours click 'Checkout' and see a blank page, despite the cart icon showing items.",
+    "project_key": "FS",
+    "priority": "Low",
+    "labels": [
+      "logs: INFO [Gateway] - HTTP 401 Unauthorized for /api/cart/checkout. Session expired.",
+      "root_cause: The backend JWT token expires after 2 hours, but the frontend single-page application (SPA) does not intercept the 401 response to clear local state and prompt a re-login."
+    ]
+  },
+  {
+    "summary": "Recommendation engine crashing product page",
+    "description": "Product Detail Pages (PDP) randomly display a white screen of death due to a frontend crash in the 'You might also like' section.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: ERROR [ReactErrorBoundary] - TypeError: Cannot read properties of null (reading 'image_url')",
+      "root_cause: The AI recommendation API occasionally returns products that lack a primary image array, and the frontend component lacks safe-navigation operators (?.) when rendering the thumbnail."
+    ]
+  },
+  {
+    "summary": "Store locator returning results in ocean",
+    "description": "Users searching for nearby physical stores by ZIP code see locations plotted at coordinates 0,0 off the coast of Africa.",
+    "project_key": "FS",
+    "priority": "Low",
+    "labels": [
+      "logs: WARN [GeoLocator] - Google Maps API quota exceeded. Falling back to default coordinates [0.0, 0.0].",
+      "root_cause: The billing credit card for the Google Maps Geocoding API expired, causing all new address-to-coordinate lookups to fail and return the unhandled default."
+    ]
+  },
+  {
+    "summary": "Apple Pay button missing on Safari",
+    "description": "The quick-checkout Apple Pay button does not render for Safari users on iOS 17 devices.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: DEBUG [PaymentRequestAPI] - canMakePayment() returned false for merchant identifier.",
+      "root_cause: A recent Content Security Policy (CSP) update accidentally blocked the Apple Pay domain validation script from executing on the storefront."
+    ]
+  },
+  {
+    "summary": "Tax exemption certificate upload failure",
+    "description": "B2B customers uploading PDF tax exemption documents receive an ambiguous 'Server Error' message.",
+    "project_key": "FS",
+    "priority": "Medium",
+    "labels": [
+      "logs: ERROR [FileUploadService] - RequestRejectedException: The request was rejected because its size (15420112) exceeds the configured maximum (10485760)",
+      "root_cause: The Tomcat web server has a default maximum file upload size of 10MB, which is being exceeded by high-resolution scanned PDF documents."
+    ]
+  },
+  {
+    "summary": "VAT calculation error on UK orders",
+    "description": "Orders shipping from the EU to the UK post-Brexit are applying EU VAT rates instead of zero-rating the export.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: INFO [TaxCalculator] - Applying standard rate 20% for origin DE, destination GB.",
+      "root_cause: The tax rules matrix was not updated to reflect the UK's departure from the EU VAT zone; the system still categorizes 'GB' as an intra-community supply."
+    ]
+  },
+  {
+    "summary": "Customer address deletion cascades to past orders",
+    "description": "When a user deletes an old shipping address from their profile, all their historical orders lose their shipping information.",
+    "project_key": "FS",
+    "priority": "High",
+    "labels": [
+      "logs: WARN [OrderService] - Fetching order ORD_9912. Address relation is null.",
+      "root_cause: The database schema uses a hard foreign key with 'ON DELETE SET NULL' linking historical orders to the user's active address book, rather than storing a snapshot of the address at checkout time."
+    ]
+  },
+  {
+    "summary": "IPv6 addresses blocked by fraud rules",
+    "description": "Customers accessing the store via cellular networks (mostly IPv6) are consistently flagged as high-risk and blocked.",
+    "project_key": "FS",
+    "priority": "Critical",
+    "labels": [
+      "logs: INFO [FraudEngine] - Order blocked. Rule triggered: Invalid IP Format or Anonymizer.",
+      "root_cause: The legacy GeoIP routing library used by the fraud service only supports IPv4 parsing; it fails to resolve IPv6 strings and defaults to a 'High Risk / Unknown Origin' score."
+    ]
+  }
+]
