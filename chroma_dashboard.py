@@ -113,7 +113,7 @@ def render_collection(collection: Any) -> None:
 
 def main(db_dir: Path) -> None:
 	st.title("ChromaDB Inspector")
-	st.caption(f"Persistent database: `{db_dir.resolve()}`")
+	st.caption("Persistent Vector Database: ChromaDB (`jira_defects` index)")
 
 	if not db_dir.exists():
 		st.error(f"Database directory does not exist: {db_dir}")
@@ -152,8 +152,21 @@ def main(db_dir: Path) -> None:
 	render_collection(selected)
 
 
+def find_default_db_dir() -> Path:
+	candidates = [
+		Path("./Defect Triage/chroma_db"),
+		Path("./chroma_db"),
+		Path(__file__).resolve().parent / "Defect Triage" / "chroma_db",
+		Path(__file__).resolve().parent / "chroma_db",
+	]
+	for c in candidates:
+		if c.exists():
+			return c
+	return Path("./chroma_db")
+
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Inspect a persistent ChromaDB database")
-	parser.add_argument("--db-dir", type=Path, default=Path("./chroma_db"))
+	parser.add_argument("--db-dir", type=Path, default=find_default_db_dir())
 	args = parser.parse_args()
 	main(args.db_dir)
